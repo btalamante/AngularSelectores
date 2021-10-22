@@ -18,10 +18,13 @@ export class SelectorPageComponent implements OnInit {
     frontera: ['', Validators.required]
   });
 
+  cargando: boolean = false;
+
   // Llenar selectores
   regiones: string[] = [];
   paises: PaisSmall[] = [];
-  fronteras: string[] = [];
+  // fronteras: string[] = [];
+  fronteras: PaisSmall[] = [];
 
   constructor(private fb: FormBuilder, private ps: PaisesServiceService) { }
 
@@ -52,6 +55,14 @@ export class SelectorPageComponent implements OnInit {
            */
           (_) => {
             this.miFormulario.get('pais')?.reset('');
+            /**
+             * Cambiamos la propiedad para que aparezca el cargando
+             */
+            this.cargando = true;
+            /**
+             * Deshabilitamos el select de frontera al seleccionar un valir de región
+             */
+            //this.miFormulario.get('frontera')?.disable();
           }),
         switchMap(
           region => {
@@ -60,6 +71,10 @@ export class SelectorPageComponent implements OnInit {
         )
       )
       .subscribe(paises => {
+        /**
+         * Desparecemos el mensajde de cargando
+         */
+        this.cargando = false;
         this.paises = paises;
       });
 
@@ -68,6 +83,11 @@ export class SelectorPageComponent implements OnInit {
         tap(
           (_) => {
             this.fronteras = [];
+            /**
+             * Habilitamos el select de frontera para que pueda seleccionar valores
+             */
+            //this.miFormulario.get('frontera')?.enable();
+            this.cargando = true;            
             this.miFormulario.get('frontera')?.reset('');
           }
         ),
@@ -75,15 +95,20 @@ export class SelectorPageComponent implements OnInit {
           codigo => {
             return this.ps.getFronteras(codigo);
           }
-        )
+        ),
+        switchMap(pais => {
+          return this.ps.getPaisesPorCodigos(pais?.borders)
+        })
       )
       .subscribe(
-        frontera => {
+        paises => {
           /**
            * Aquí le decimos que si el valor es nulo asigne un arreglo vacío
            */
-          this.fronteras = frontera?.borders || [];
-          console.log('frontera', frontera);
+          // this.fronteras = frontera?.borders || [];
+          console.log('paises', paises);
+          this.cargando = false;
+          this.fronteras = paises;
         }
       )
     // .pipe(
